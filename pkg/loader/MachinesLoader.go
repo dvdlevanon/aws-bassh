@@ -111,7 +111,7 @@ func findKeyFile(instance types.Instance, context buildModelContext) string {
 	if instance.KeyName != nil {
 		return buildKeyfile(*instance.KeyName, context)
 	}
-	
+
 	return ""
 }
 

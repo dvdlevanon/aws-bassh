@@ -96,11 +96,11 @@ func buildSshInitalArgs(config model.ConnectConfig) []string {
 
 	args = append(args, "-i", config.Machine.Keyfile)
 	args = append(args, config.ExtraSSHParams...)
-	
+
 	if len(config.SSHCommands) > 0 {
 		args = append(args, "-t")
 	}
-	
+
 	return args
 }
 
@@ -152,7 +152,7 @@ func generateBastionProxyCommand(config model.ConnectConfig) string {
 	)
 }
 
-func buildSSHCommandsArg(config model.ConnectConfig) []string  {
+func buildSSHCommandsArg(config model.ConnectConfig) []string {
 	return config.SSHCommands
 }
 
