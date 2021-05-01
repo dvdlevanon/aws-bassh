@@ -5,7 +5,10 @@ A command line utility which helps to connect AWS Ec2 instances. It get a list o
 
 ## Installation
 
-TBD
+```bash
+curl -L -o awsbassh https://github.com/dvdlevanon/aws-bassh/releases/download/0.0.1/awsbassh-0.0.1-x68_64
+install -t /usr/local/bin awsbassh
+```
 
 ## Building from source
 
