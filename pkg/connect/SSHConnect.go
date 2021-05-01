@@ -11,22 +11,22 @@ import (
 	"strings"
 )
 
-func SSH(config model.ConnectConfig) {
+func SSH(config model.ConnectConfig) bool {
 	instance, err := ec2client.DescribeInstance(config.Machine.Id)
 
 	if err != nil {
-		return
+		return false
 	}
 
-	validateAndConnectToInstance(config, instance)
+	return validateAndConnectToInstance(config, instance)
 }
 
-func validateAndConnectToInstance(config model.ConnectConfig, instance *types.Instance) {
+func validateAndConnectToInstance(config model.ConnectConfig, instance *types.Instance) bool {
 	if !validateBeforeConnect(config, instance) {
-		return
+		return false
 	}
 
-	connectToInstance(config, instance)
+	return connectToInstance(config, instance)
 }
 
 func validateBeforeConnect(config model.ConnectConfig, instance *types.Instance) bool {
@@ -69,25 +69,38 @@ func validateKeyfile(keyfile string) bool {
 	return true
 }
 
-func connectToInstance(config model.ConnectConfig, instance *types.Instance) {
+func connectToInstance(config model.ConnectConfig, instance *types.Instance) bool {
 	var sshArgs = buildSshArgs(config, instance)
 
 	logSshCommand(sshArgs)
 	spawnSsh(sshArgs)
+
+	return true
 }
 
 func buildSshArgs(config model.ConnectConfig, instance *types.Instance) []string {
-	args := []string{}
-
-	args = append(args, "-i", config.Machine.Keyfile)
-	args = append(args, config.ExtraSSHParams...)
+	args := buildSshInitalArgs(config)
 
 	if shouldUseBastion(config, instance) {
 		args = append(args, buildBastionArgs(config, instance)...)
 	}
 
 	args = append(args, buildUserAddressArg(config, instance))
+	args = append(args, buildSSHCommandsArg(config)...)
 
+	return args
+}
+
+func buildSshInitalArgs(config model.ConnectConfig) []string {
+	args := []string{}
+
+	args = append(args, "-i", config.Machine.Keyfile)
+	args = append(args, config.ExtraSSHParams...)
+	
+	if len(config.SSHCommands) > 0 {
+		args = append(args, "-t")
+	}
+	
 	return args
 }
 
@@ -106,9 +119,17 @@ func getPublicAddress(config model.ConnectConfig, instance *types.Instance) *str
 
 func buildUserAddressArg(config model.ConnectConfig, instance *types.Instance) string {
 	if shouldUseBastion(config, instance) {
-		return config.Machine.User + "@" + *instance.PrivateIpAddress
+		return getSSHMachineUser(config) + "@" + *instance.PrivateIpAddress
 	} else {
-		return config.Machine.User + "@" + *getPublicAddress(config, instance)
+		return getSSHMachineUser(config) + "@" + *getPublicAddress(config, instance)
+	}
+}
+
+func getSSHMachineUser(config model.ConnectConfig) string {
+	if config.SSHUserName != "" {
+		return config.SSHUserName
+	} else {
+		return config.Machine.User
 	}
 }
 
@@ -129,6 +150,10 @@ func generateBastionProxyCommand(config model.ConnectConfig) string {
 		config.Machine.Bastion.User,
 		config.Machine.Bastion.Url,
 	)
+}
+
+func buildSSHCommandsArg(config model.ConnectConfig) []string  {
+	return config.SSHCommands
 }
 
 func logSshCommand(sshArgs []string) {

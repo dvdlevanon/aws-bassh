@@ -29,8 +29,7 @@ func runGenerate() bool {
 		return false
 	}
 
-	output.WriteMachines(generateConfig, machines)
-	return true
+	return output.WriteMachines(generateConfig, machines)
 }
 
 func runConnect() bool {
@@ -42,8 +41,7 @@ func runConnect() bool {
 
 	log.Printf("Connect config %+v\n", connectConfig)
 
-	connect.SSH(connectConfig)
-	return true
+	return connect.SSH(connectConfig)
 }
 
 func main() {

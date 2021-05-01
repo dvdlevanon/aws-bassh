@@ -14,6 +14,9 @@ var (
 	forceBastionParam      = connectCmd.Bool("force-bastion", false, "Force connection via bastion, even if Public Ip available")
 	usePublicDnsParam      = connectCmd.Bool("use-public-dns", false, "Use public dns instead of public ip")
 	sshParamsParam         = connectCmd.String("ssh-params", "-o StrictHostKeyChecking=no -q", "Extra ssh parameters")
+	
+	sshCommandsParam = connectCmd.String("ssh-commands", "", "SSH Commands to run after the ssh connection is established")
+	sshUserNameParam = connectCmd.String("ssh-user", "", "Use this ssh user for connection")
 )
 
 type ConnectConfig struct {
@@ -22,6 +25,8 @@ type ConnectConfig struct {
 	ForceBastion   bool
 	UsePublicDns   bool
 	ExtraSSHParams []string
+	SSHCommands 	[]string
+	SSHUserName string
 }
 
 func MakeCommandLineConnectConfig() ConnectConfig {
@@ -33,6 +38,8 @@ func MakeCommandLineConnectConfig() ConnectConfig {
 		ForceBastion:   *forceBastionParam,
 		UsePublicDns:   *usePublicDnsParam,
 		ExtraSSHParams: strings.Split(*sshParamsParam, " "),
+		SSHUserName: *sshUserNameParam,
+		SSHCommands: strings.Split(*sshCommandsParam, " "),
 	}
 }
 

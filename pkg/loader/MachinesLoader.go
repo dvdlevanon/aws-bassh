@@ -108,7 +108,11 @@ func findUserName(instance types.Instance, tags map[string]string, context build
 }
 
 func findKeyFile(instance types.Instance, context buildModelContext) string {
-	return buildKeyfile(*instance.KeyName, context)
+	if instance.KeyName != nil {
+		return buildKeyfile(*instance.KeyName, context)
+	}
+	
+	return ""
 }
 
 func findBastion(instance types.Instance, tags map[string]string, context buildModelContext) model.BastionMachine {
