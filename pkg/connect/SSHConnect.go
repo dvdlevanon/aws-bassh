@@ -33,7 +33,7 @@ func validateBeforeConnect(config model.ConnectConfig, instance *types.Instance)
 	if !checkMachineState(instance) {
 		return false
 	}
-
+	
 	if !validateKeyfile(config.Machine.Keyfile) {
 		return false
 	}
@@ -105,15 +105,30 @@ func buildSshInitalArgs(config model.ConnectConfig) []string {
 }
 
 func shouldUseBastion(config model.ConnectConfig, instance *types.Instance) bool {
-	return getPublicAddress(config, instance) == nil ||
-		(config.ForceBastion && config.Machine.Bastion.Url != "")
+	if config.ForceBastion && config.Machine.Bastion.Url != "" {
+		return true
+	}
+	
+	if instance.PublicIpAddress != nil {
+		return false
+	}
+	
+	if config.Machine.Bastion.Url != "" {
+		return true
+	}
+	
+	return false
 }
 
-func getPublicAddress(config model.ConnectConfig, instance *types.Instance) *string {
+func getMachineAddress(config model.ConnectConfig, instance *types.Instance) *string {
 	if config.UsePublicDns {
 		return instance.PublicDnsName
 	} else {
-		return instance.PublicIpAddress
+		if instance.PublicIpAddress != nil {
+			return instance.PublicIpAddress
+		} else {
+			return instance.PrivateIpAddress
+		}
 	}
 }
 
@@ -121,7 +136,7 @@ func buildUserAddressArg(config model.ConnectConfig, instance *types.Instance) s
 	if shouldUseBastion(config, instance) {
 		return getSSHMachineUser(config) + "@" + *instance.PrivateIpAddress
 	} else {
-		return getSSHMachineUser(config) + "@" + *getPublicAddress(config, instance)
+		return getSSHMachineUser(config) + "@" + *getMachineAddress(config, instance)
 	}
 }
 
