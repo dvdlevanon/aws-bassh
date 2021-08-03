@@ -33,7 +33,7 @@ func validateBeforeConnect(config model.ConnectConfig, instance *types.Instance)
 	if !checkMachineState(instance) {
 		return false
 	}
-	
+
 	if !validateKeyfile(config.Machine.Keyfile) {
 		return false
 	}
@@ -108,15 +108,15 @@ func shouldUseBastion(config model.ConnectConfig, instance *types.Instance) bool
 	if config.ForceBastion && config.Machine.Bastion.Url != "" {
 		return true
 	}
-	
+
 	if instance.PublicIpAddress != nil {
 		return false
 	}
-	
+
 	if config.Machine.Bastion.Url != "" {
 		return true
 	}
-	
+
 	return false
 }
 
