@@ -58,8 +58,10 @@ func writeMachinesFunctions(config model.GenerateConfig, machines map[string]mod
 		return false
 	}
 
+	duplications := buildDuplicationsMap(machines)
+
 	for _, machine := range machines {
-		bashFunction := getMachineFunction(config, machine)
+		bashFunction := getMachineFunction(config, machine, duplications)
 
 		if err := tmpl.Execute(outputFile, bashFunction); err != nil {
 			log.Printf("Error executing template for %v %v", bashFunction, err)
@@ -67,6 +69,17 @@ func writeMachinesFunctions(config model.GenerateConfig, machines map[string]mod
 	}
 
 	return true
+}
+
+func buildDuplicationsMap(machines map[string]model.Machine) map[string]int {
+	var duplications map[string]int
+	duplications = make(map[string]int)
+
+	for _, machine := range machines {
+		duplications[machine.Name] = duplications[machine.Name] + 1
+	}
+
+	return duplications
 }
 
 func parseBashFunctionTemplate() (*template.Template, error) {
@@ -80,13 +93,21 @@ func parseBashFunctionTemplate() (*template.Template, error) {
 	return tmpl, nil
 }
 
-func getMachineFunction(config model.GenerateConfig, machine model.Machine) bashFunction {
+func getMachineFunction(config model.GenerateConfig, machine model.Machine, duplications map[string]int) bashFunction {
 	return bashFunction{
-		FunctionName: normalizeMachineName(config.BashAliasPrefix + machine.Name),
+		FunctionName: normalizeMachineName(config.BashAliasPrefix + getMachineName(machine, duplications)),
 		MachineData:  model.SerializeMachine(machine),
 		AwsbasshExec: getAwsbasshPath(),
 		AwsProfile:   config.AwsProfile,
 		ForceBastion: config.ForceBastion,
+	}
+}
+
+func getMachineName(machine model.Machine, duplications map[string]int) string {
+	if duplications[machine.Name] > 1 {
+		return machine.Name + "-" + machine.Id
+	} else {
+		return machine.Name
 	}
 }
 
