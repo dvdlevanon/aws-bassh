@@ -16,6 +16,7 @@ var (
 	sshParamsParam         = connectCmd.String("ssh-params", "-o StrictHostKeyChecking=no -q", "Extra ssh parameters")
 	sshCommandsParam       = connectCmd.String("ssh-commands", "", "SSH Commands to run after the ssh connection is established")
 	sshUserNameParam       = connectCmd.String("ssh-user", "", "Use this ssh user for connection")
+	sftpParam              = connectCmd.Bool("sftp", false, "Connect sftp instead of ssh")
 )
 
 type ConnectConfig struct {
@@ -26,6 +27,7 @@ type ConnectConfig struct {
 	ExtraSSHParams []string
 	SSHCommands    []string
 	SSHUserName    string
+	Sftp           bool
 }
 
 func MakeCommandLineConnectConfig() ConnectConfig {
@@ -39,6 +41,7 @@ func MakeCommandLineConnectConfig() ConnectConfig {
 		ExtraSSHParams: strings.Split(*sshParamsParam, " "),
 		SSHUserName:    *sshUserNameParam,
 		SSHCommands:    strings.Split(*sshCommandsParam, " "),
+		Sftp:           *sftpParam,
 	}
 }
 

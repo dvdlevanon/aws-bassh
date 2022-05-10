@@ -70,34 +70,35 @@ func validateKeyfile(keyfile string) bool {
 }
 
 func connectToInstance(config model.ConnectConfig, instance *types.Instance) bool {
-	var sshArgs = buildSshArgs(config, instance)
+	exe := getExec(config)
+	args := buildArgs(config, instance)
 
-	logSshCommand(sshArgs)
-	spawnSsh(sshArgs)
+	logCommand(exe, args)
+	spawn(exe, args)
 
 	return true
 }
 
-func buildSshArgs(config model.ConnectConfig, instance *types.Instance) []string {
-	args := buildSshInitalArgs(config)
+func buildArgs(config model.ConnectConfig, instance *types.Instance) []string {
+	args := buildInitalArgs(config)
 
 	if shouldUseBastion(config, instance) {
 		args = append(args, buildBastionArgs(config, instance)...)
 	}
 
 	args = append(args, buildUserAddressArg(config, instance))
-	args = append(args, buildSSHCommandsArg(config)...)
+	args = append(args, buildCommandsArg(config)...)
 
 	return args
 }
 
-func buildSshInitalArgs(config model.ConnectConfig) []string {
+func buildInitalArgs(config model.ConnectConfig) []string {
 	args := []string{}
 
 	args = append(args, "-i", config.Machine.Keyfile)
 	args = append(args, config.ExtraSSHParams...)
 
-	if len(config.SSHCommands) > 0 {
+	if len(config.SSHCommands) > 0 && !config.Sftp {
 		args = append(args, "-t")
 	}
 
@@ -134,13 +135,13 @@ func getMachineAddress(config model.ConnectConfig, instance *types.Instance) *st
 
 func buildUserAddressArg(config model.ConnectConfig, instance *types.Instance) string {
 	if shouldUseBastion(config, instance) {
-		return getSSHMachineUser(config) + "@" + *instance.PrivateIpAddress
+		return getMachineUser(config) + "@" + *instance.PrivateIpAddress
 	} else {
-		return getSSHMachineUser(config) + "@" + *getMachineAddress(config, instance)
+		return getMachineUser(config) + "@" + *getMachineAddress(config, instance)
 	}
 }
 
-func getSSHMachineUser(config model.ConnectConfig) string {
+func getMachineUser(config model.ConnectConfig) string {
 	if config.SSHUserName != "" {
 		return config.SSHUserName
 	} else {
@@ -167,17 +168,17 @@ func generateBastionProxyCommand(config model.ConnectConfig) string {
 	)
 }
 
-func buildSSHCommandsArg(config model.ConnectConfig) []string {
+func buildCommandsArg(config model.ConnectConfig) []string {
 	return config.SSHCommands
 }
 
-func logSshCommand(sshArgs []string) {
+func logCommand(exe string, args []string) {
 	var sb strings.Builder
 
-	sb.WriteString(getSshExec())
+	sb.WriteString(exe)
 	sb.WriteString(" ")
 
-	for _, arg := range sshArgs {
+	for _, arg := range args {
 		sb.WriteString("\"")
 		sb.WriteString(arg)
 		sb.WriteString("\" ")
@@ -191,8 +192,8 @@ func logSshCommand(sshArgs []string) {
 	fmt.Println("")
 }
 
-func spawnSsh(sshArgs []string) {
-	cmd := exec.Command(getSshExec(), sshArgs...)
+func spawn(exe string, args []string) {
+	cmd := exec.Command(exe, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -200,6 +201,10 @@ func spawnSsh(sshArgs []string) {
 	cmd.Run()
 }
 
-func getSshExec() string {
-	return "ssh"
+func getExec(config model.ConnectConfig) string {
+	if config.Sftp {
+		return "sftp"
+	} else {
+		return "ssh"
+	}
 }
