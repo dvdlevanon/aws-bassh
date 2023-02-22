@@ -3,10 +3,11 @@ package loader
 import (
 	"aws-bassh/pkg/ec2client"
 	"aws-bassh/pkg/model"
-	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"path"
 	"strings"
+
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
 
 func LoadAllMachines(config model.GenerateConfig) (map[string]model.Machine, error) {
@@ -25,9 +26,7 @@ type buildModelContext struct {
 }
 
 func buildModelFromInstances(instances *ec2.DescribeInstancesOutput, config model.GenerateConfig) (map[string]model.Machine, error) {
-	var machines map[string]model.Machine
-	machines = make(map[string]model.Machine)
-
+	machines := make(map[string]model.Machine)
 	context := buildModelContext{
 		config:       config,
 		allInstances: instances,
@@ -35,6 +34,10 @@ func buildModelFromInstances(instances *ec2.DescribeInstancesOutput, config mode
 
 	for _, reservations := range instances.Reservations {
 		for _, instance := range reservations.Instances {
+			if instance.State.Name == types.InstanceStateNameTerminated {
+				continue
+			}
+
 			machine := buildModelForMachine(instance, buildTagsMap(instance), context)
 
 			machines[machine.Id] = machine
@@ -45,9 +48,7 @@ func buildModelFromInstances(instances *ec2.DescribeInstancesOutput, config mode
 }
 
 func buildTagsMap(instance types.Instance) map[string]string {
-	var tags map[string]string
-	tags = make(map[string]string)
-
+	tags := make(map[string]string)
 	for _, tag := range instance.Tags {
 		tags[*tag.Key] = *tag.Value
 	}
@@ -103,8 +104,6 @@ func findUserName(instance types.Instance, tags map[string]string, context build
 	default:
 		return "ec2-user"
 	}
-
-	return model.NoUserName
 }
 
 func findKeyFile(instance types.Instance, context buildModelContext) string {
