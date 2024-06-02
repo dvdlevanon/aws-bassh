@@ -37,6 +37,10 @@ func buildModelFromInstances(instances *ec2.DescribeInstancesOutput, config mode
 			if instance.State.Name == types.InstanceStateNameTerminated {
 				continue
 			}
+			
+			if instance.State.Name == types.InstanceStateNameStopped {
+				continue
+			}
 
 			machine := buildModelForMachine(instance, buildTagsMap(instance), context)
 
